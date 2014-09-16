@@ -91,11 +91,11 @@ If you later wish to see processes and other plugins:
 ```
 python damm.py --profile WinXPSP2x86 -p processes dlls modules --db my_results.db
 ```
-Will:  
-1. consult the db for the 'processes' output
-2. run the 'dlls' and 'modules' plugins
-3. display the results
-4. store the new results in the db 
+Will
+ 1. consult the db for the 'processes' output
+ 2. run the 'dlls' and 'modules' plugins
+ 3. display the results
+ 4. store the new results in the db
 
 Once you have stored some data in a db, you can query it with the -q switch
 ```
