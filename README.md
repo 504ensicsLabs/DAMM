@@ -76,15 +76,21 @@ offset	name	pid	ppid	image_path_name	command_line	create_time	exit_time	threads	
 ```
 
 To make these results persist in a sqlite db, just supply a filename for the db:
-`python damm.py --profile WinXPSP2x86 -f memory.dmp -p processes --db my_results.db
+```
+python damm.py --profile WinXPSP2x86 -f memory.dmp -p processes --db my_results.db
+```
 This will print results to the terminal as well as store them in 'my_results.db'
 
 To see the results again:
-`python damm.py -p processes --db my_results.db
+```
+python damm.py -p processes --db my_results.db
+```
 (Note that you no longer need the memory image or to specify a profile, and the listing will come out pretty close to instantly regardless of how long the original processing took.)
 
 If you later wish to see processes and other plugins:
-`python damm.py --profile WinXPSP2x86 -p processes dlls modules --db my_results.db
+```
+python damm.py --profile WinXPSP2x86 -p processes dlls modules --db my_results.db
+```
 Will:  
 1. consult the db for the 'processes' output
 2. run the 'dlls' and 'modules' plugins
@@ -237,7 +243,9 @@ offset	pid	handle_value	granted_access	object_type	name
 This can give a nice overview of the objects associated with a process. 
 
 Even more powerful, diff and filtering can be used in conjunction. I have a memory sample from before a tdl3 infection and one after. Searching for thew string 'tdl' in the before db results in ~600 hits. In the after infection db, there are ~730 hits. (Note that ntdll.dll contain the string tdl.) Using diff and filtering in conjunction as below results in only ~180 hits - a significant reduction. 
-`python damm.py -p all --diff before_tdl3.db --db after_tdl3.db --filter string:tdl --filtertype partial > string_tdl_diff.txt
+```
+python damm.py -p all --diff before_tdl3.db --db after_tdl3.db --filter string:tdl --filtertype partial > string_tdl_diff.txt
+```
 
 ### Warnings
 In an attempt to make the traige process even easier, DAMM has an experimental warning system built in to sniff out signs of malicious activity including:
@@ -261,7 +269,9 @@ Plus more!
 * SIDs giving domain access
 * debug privileges
 ...
-`python damm.py --db after_tdl3.db  --warnings
+```
+python damm.py --db after_tdl3.db  --warnings
+```
 
 # Finally
 Thanks to the Volatiltiy team for the Art of Memory Forensics book as well as the Volatility cheat sheet where many of these warning ideas came from!
