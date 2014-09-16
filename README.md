@@ -1,7 +1,18 @@
 # DAMM
-An open source memory analysis tool built on top of Volatility. It is meant as a proving ground for interesting new techniques to be made available to the community. These techniques are an attempt to speed up the investigation process through data reduction and codifying some expert knowledge. It currently supports the following features:
+An open source memory analysis tool built on top of Volatility. It is meant as a proving ground for interesting new techniques to be made available to the community. These techniques are an attempt to speed up the investigation process through data reduction and codifying some expert knowledge.
 
-## Features
+##Table of Contents
+ * [Features](#features)
+ * [Usage](#usage)
+   * [Supported plugins](#plugins)
+   * [Example](#example)
+   * [Differencing](#differencing)
+   * [Unique ID Manipulation](#unique-id)
+   * [Filtering](#features)
+   * [Warnings](#warnings)
+ * [Finally](#finally)
+ 
+## Features <a name="features"/>
 * ~30 Volaility plugins combined into ~20 DAMM plugins (e.g., pslist, psxview and other elements are combined into a 'processes' plugin)
 * Can run multipe plugins in one invocation
 * The option to store plugin results in sqlite databases for preservation or for "cached" analysis
@@ -10,7 +21,7 @@ An open source memory analysis tool built on top of Volatility. It is meant as a
 * The ability to warn on certain types of suspicious behavior
 * Output for terminal, tsv or grepable
 
-## Usage
+## Usage <a name="usage"/>
 ```
 python damm.py -h
 usage: damm.py [-h] [-d DIR] [-p PLUGIN [PLUGIN ...]] [-f FILE] [-k KDBG]
@@ -44,13 +55,13 @@ optional arguments:
   -q                    Query the supplied db (via --db).
 ```
 
-### Supported plugins
+### Supported plugins <a name="plugins"/>
 apihooks callbacks connections devicetree dlls evtlogs handles idt injections messagehooks mftentries modules mutants privileges processes services sids timers
 
 Supported plugins: apihooks callbacks connections devicetree dlls evtlogs 
     handles idt injections messagehooks mftentries modules mutants privileges processes services sids timers
 
-### Example
+### Example <a name="example"/>
 Supply a profile as in Volatility, a memory image and a list of plugins to run (or 'all') to get tsv output:
 ```
 python damm.py --profile WinXPSP2x86 -f memory.dmp -p processes
@@ -131,7 +142,7 @@ Plugins have attributes that can have types for filtering, e.g., for processes:
 ```
 These attributes and types can be leveraged by the differencing and filtering functions of DAMM
 
-### Differencing
+### Differencing <a name="differencing"/>
 To use the differencing engine, create 2 databases from 2 distinct memory images - such as one from before and one from after a piece of malware is executed
 ```
 python damm.py --profile WinXPSP2x86-f before.dmp -p processes --db before.db
@@ -156,7 +167,7 @@ The results look similar to the 'processes' plugin output above, but there are s
 * Results that are only in the 'after.db' have 'New' in the first ('Status') column
 * Results in that have changed between the dbs have a 'Status' of 'Changed', and, importantly, denote the changes DAMM detected with '->': in the last line of output above the number of threads and handles has changed.
 
-### Unique ID Manipulation
+### Unique ID Manipulation <a name="unique-id"/>
 In order to determine which processes exist in both memory captures above, behind the scenes certain attributes of processes are used to make a unique identifier for each. For example, by default DAMM used the pid, ppid, name, and start time as the unique identifier of a process. This makes sense as these things are unlikey to (shouldn't? can't?) change over the life of the process, as opposed to attributes like the number of threads and handles, which change constantly. This default set works fine for comparisons of objects from memory images from the same boot of the same machine (e.g., using VM snapshots), but what about comparing across memory images taken from different boots of the machine? Or even other machines? The pid, and likely ppid will certainly not be the same, but the name, image path and command line should be.
 
 Comparing a stock XPSP2x86 memory image with our image after some malware ran:
@@ -202,7 +213,7 @@ Changed 0x19f7548->0x18afc70    svchost.exe     1200->1124      680->692        
 ```
 DAMM now identifies fewer processes as 'New' (including the malware process), allowing the investigator to focus their efforts on these processes.
 
-### Filtering
+### Filtering <a name="filetering"/>
 
 With all plugins run on a small memory sample, we get ~14,000 memory objects: processes, dlls, modules, etc. What if we have already identified some process or string of interest? Grep can be probematic, especially when searching for pids, so DAMM includes a simple type and filtering system. To filter on objects that have a pid attribute of a certain value:
 ```
@@ -247,7 +258,7 @@ Even more powerful, diff and filtering can be used in conjunction. I have a memo
 python damm.py -p all --diff before_tdl3.db --db after_tdl3.db --filter string:tdl --filtertype partial > string_tdl_diff.txt
 ```
 
-### Warnings
+### Warnings <a name="warnings"/>
 In an attempt to make the traige process even easier, DAMM has an experimental warning system built in to sniff out signs of malicious activity including:
 
 For certain Windows processes:
@@ -273,7 +284,7 @@ Plus more!
 python damm.py --db after_tdl3.db  --warnings
 ```
 
-# Finally
+# Finally <a name="finally"/>
 Thanks to the Volatiltiy team for the Art of Memory Forensics book as well as the Volatility cheat sheet where many of these warning ideas came from!
 
 For questions or comments: damm@504ensics.com
