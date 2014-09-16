@@ -118,7 +118,7 @@ Plugins have attributes that can have types for filtering, e.g., for processes:
 (use --info to see for all plugin attributes)
 ```
 	offset
-	name 		: string
+	name		: string
 	pid		: pid
 	ppid		: pid
 	image_path_name	: string
