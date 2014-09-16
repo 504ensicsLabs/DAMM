@@ -27,8 +27,8 @@ optional arguments:
                         Plugin(s) to run. For a list of options use --info
   -f FILE               Memory image file to run plugin on
   -k KDBG               KDBG address for the images (in hex)
-  --db DB               sqlite db file, for efficient input/output
-  --profile PROFILE     volatility profile for the images (e.g. WinXPSP2x86)
+  --db DB               SQLite db file, for efficient input/output
+  --profile PROFILE     Volatility profile for the images (e.g. WinXPSP2x86)
   --debug               Print debugging statements
   --info                Print available volatility profiles, plugins
   --tsv                 Print screen formatted output.
@@ -47,27 +47,8 @@ optional arguments:
 ### Supported plugins
 apihooks callbacks connections devicetree dlls evtlogs handles idt injections messagehooks mftentries modules mutants privileges processes services sids timers
 
-Plugins have attributes that can have types for filtering, e.g., processes:
-(use --info to see for all plugins)
-	offset
-	name 		: string
-	pid		: pid
-	ppid		: pid
-	image_path_name	: string
-	command_line	: string
-	create_time
-	exit_time
-	threads
-	session_id
-	handles
-	is_wow64
-	pslist
-	psscan
-	thrdproc
-	pspcid
-	csrss
-	session
-	deskthrd
+Supported plugins: apihooks callbacks connections devicetree dlls evtlogs 
+    handles idt injections messagehooks mftentries modules mutants privileges processes services sids timers
 
 ### Example
 Supply a profile as in Volatility, a memory image and a list of plugins to run (or 'all') to get tsv output:
@@ -95,27 +76,54 @@ offset	name	pid	ppid	image_path_name	command_line	create_time	exit_time	threads	
 ```
 
 To make these results persist in a sqlite db, just supply a filename for the db:
-```
-python damm.py --profile WinXPSP2x86 -f memory.dmp -p processes --db my_results.db
-```
-
+`python damm.py --profile WinXPSP2x86 -f memory.dmp -p processes --db my_results.db
 This will print results to the terminal as well as store them in 'my_results.db'
 
 To see the results again:
-```
-python damm.py -p processes --db my_results.db
-```
+`python damm.py -p processes --db my_results.db
 (Note that you no longer need the memory image or to specify a profile, and the listing will come out pretty close to instantly regardless of how long the original processing took.)
 
 If you later wish to see processes and other plugins:
-```
-python damm.py --profile WinXPSP2x86 -p processes dlls modules --db my_results.db
-```
+`python damm.py --profile WinXPSP2x86 -p processes dlls modules --db my_results.db
 Will:  
 1. consult the db for the 'processes' output
 2. run the 'dlls' and 'modules' plugins
 3. display the results
 4. store the new results in the db 
+
+Once you have stored some data in a db, you can query it with the -q switch
+```
+python damm.py -q --db stuxnet.vmem_all.db 
+profile:	WinXPSP2x86
+memimg:	WinXPSP2x86/stuxnet.vmem
+COMPUTERNAME:	JAN-DF663B3DBF1
+plugins:	injections processes mutants devicetree privileges sids modules evtlogs connections callbacks handles dlls timers services apihooks mftentries idt messagehooks
+```
+
+Plugins have attributes that can have types for filtering, e.g., for processes:
+(use --info to see for all plugin attributes)
+```
+	offset
+	name 		    : string
+	pid		        : pid
+	ppid		    : pid
+	image_path_name	: string
+	command_line	: string
+	create_time
+	exit_time
+	threads
+	session_id
+	handles
+	is_wow64
+	pslist
+	psscan
+	thrdproc
+	pspcid
+	csrss
+	session
+	deskthrd
+```
+These attributes and types can be leveraged by the differencing and filtering functions of DAMM
 
 ### Differencing
 To use the differencing engine, create 2 databases from 2 distinct memory images - such as one from before and one from after a piece of malware is executed
@@ -143,7 +151,7 @@ The results look similar to the 'processes' plugin output above, but there are s
 * Results in that have changed between the dbs have a 'Status' of 'Changed', and, importantly, denote the changes DAMM detected with '->': in the last line of output above the number of threads and handles has changed.
 
 ### Unique ID Manipulation
-In order to determine which processes exist in both memory captures above, behind the scenes certain attributes of processes are used to make a unique identifier for each. For example, by default DAMM used the pid, ppid, name, and start time as the unique identifier of a process. This makes sense as these things are unlikey to (shouldn't? can't?) change over the life of the process, as opposed to attributes like the number of threads and handles, which change constantly. This default set works fine for comparisons of objects from memory images from the same boot of the same machine, but what about comparing across memory images taken from different boots of the machine? Or even other machines? The pid, and likely ppid will certainly not be the same, but the name, image path and command line should? 
+In order to determine which processes exist in both memory captures above, behind the scenes certain attributes of processes are used to make a unique identifier for each. For example, by default DAMM used the pid, ppid, name, and start time as the unique identifier of a process. This makes sense as these things are unlikey to (shouldn't? can't?) change over the life of the process, as opposed to attributes like the number of threads and handles, which change constantly. This default set works fine for comparisons of objects from memory images from the same boot of the same machine (e.g., using VM snapshots), but what about comparing across memory images taken from different boots of the machine? Or even other machines? The pid, and likely ppid will certainly not be the same, but the name, image path and command line should be.
 
 Comparing a stock XPSP2x86 memory image with our image after some malware ran:
 ```
@@ -229,23 +237,34 @@ offset	pid	handle_value	granted_access	object_type	name
 This can give a nice overview of the objects associated with a process. 
 
 Even more powerful, diff and filtering can be used in conjunction. I have a memory sample from before a tdl3 infection and one after. Searching for thew string 'tdl' in the before db results in ~600 hits. In the after infection db, there are ~730 hits. (Note that ntdll.dll contain the string tdl.) Using diff and filtering in conjunction as below results in only ~180 hits - a significant reduction. 
-```
-python damm.py -p all --diff before_tdl3.db --db after_tdl3.db --filter string:tdl --filtertype partial > string_tdl_diff.txt
-```
+`python damm.py -p all --diff before_tdl3.db --db after_tdl3.db --filter string:tdl --filtertype partial > string_tdl_diff.txt
 
 ### Warnings
-In an attempt to make the traige process even easier, DAMM has a prototype warning system built in to sniff out signs of danger. For the moment it just checks some process parent/child relationships, but the intent is to expand upon this considerably.
-```
-python damm.py -p all --db after_tdl3.db  --warnings
+In an attempt to make the traige process even easier, DAMM has an experimental warning system built in to sniff out signs of malicious activity including:
 
-< actual processes output removed >
+For certain Windows processes:
+* incorrect parent/child relationships
+* hidden processes
+* incorrect binary path
+* incorrect default priority
+* incorrect session
 
-Warnings:
-svchost.exe (pid: 904) parent process is services.exe as expected.
-lsass.exe (pid: 704) parent process is winlogon.exe as expected.
-svchost.exe (pid: 1152) parent process is services.exe as expected.
-services.exe (pid: 692) parent process is winlogon.exe as expected.
-svchost.exe (pid: 1080) parent process is services.exe as expected.
-System pid is 4 as expected.
+For all processes, and loaded DLLs and modules:
+* loaded/run from temp directory
+
+For DLLs:
+* bogus extensions
+* hidden DLLs 
+
+Plus more!
+* PE headers in injections
+* SIDs giving domain access
+* debug privileges
 ...
-```
+`python damm.py --db after_tdl3.db  --warnings
+
+# Finally
+Thanks to the Volatiltiy team for the Art of Memory Forensics book as well as the Volatility cheat sheet where many of these warning ideas came from!
+
+For questions or comments: damm@504ensics.com
+For bug reports, please  use the github issue tracker.
