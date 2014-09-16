@@ -66,29 +66,24 @@ Supported plugins: apihooks callbacks connections devicetree dlls evtlogs
     handles idt injections messagehooks mftentries modules mutants privileges processes services sids timers
 
 ### Example <a name="example"/>
-Supply a profile as in Volatility, a memory image and a list of plugins to run (or 'all') to get tsv output:
+Supply a profile as in Volatility, a memory image and a list of plugins to run (or 'all') to get terminal output:
+
 ```
-python damm.py --profile WinXPSP2x86 -f memory.dmp -p processes
+python damm.py --profile WinXPSP2x86 -f memory.dmp -p processes | less -S
 (or python damm.py --profile WinXPSP2x86 -f memory.dmp -p processes dlls modules)
 (or python damm.py --profile WinXPSP2x86 -f memory.dmp -p all)
-
+```
+```
 processes
-offset	name	pid	ppid	image_path_name	command_line	create_time	exit_time	threads	session_id	handles	is_wow64	pslist	psscan	thrdproc	pspcid	csrss	session	deskthrd	
-0x1983020	smss.exe	376	4	\SystemRoot\System32\smss.exe	\SystemRoot\System32\smss.exe	2013-10-31 17:21:24 UTC+0000	None	3		19	False	True	False	True	True	False	False	False
-0x18eea50	VBoxService.exe	860	692			2013-10-31 17:21:26 UTC+0000	None	8			False	True	False	True	True	True	True	True	
-0x18e4710	svchost.exe	904	692			2013-10-31 17:21:26 UTC+0000	None	17			False	True	False	True	True	True	True	True	
-0x18fdd38	lsass.exe	704	648			2013-10-31 17:21:25 UTC+0000	None	22			False	True	False	True	True	True	True	True	
-0x18ffa30	services.exe	692	648	C:\WINDOWS\system32\services.exe	C:\WINDOWS\system32\services.exe	2013-10-31 17:21:25 UTC+0000	None	14	0	241	False	True	False	True	True	TrueTrue	True	
-0x183ed10	alg.exe	1888	692			2013-10-31 17:21:37 UTC+0000	None	6			False	True	False	True	True	True	True	True	
-0x18b4648	svchost.exe	1080	692	C:\WINDOWS\System32\svchost.exe	C:\WINDOWS\System32\svchost.exe -k netsvcs	2013-10-31 17:21:26 UTC+0000	None	74	0	1126	False	True	False	True	True	TrueTrue	True	
-0x18afc70	svchost.exe	1124	692	C:\WINDOWS\system32\svchost.exe	C:\WINDOWS\system32\svchost.exe -k NetworkService	2013-10-31 17:21:26 UTC+0000	None	4	0	57	False	True	False	True	TrueTrue	True	True	
-0x18a7a60	svchost.exe	1152	692	C:\WINDOWS\system32\svchost.exe	C:\WINDOWS\system32\svchost.exe -k LocalService	2013-10-31 17:21:26 UTC+0000	None	13	0	193	False	True	False	True	True	TrueTrue	True	
-0x1892490	VBoxTray.exe	1932	1636			2013-10-31 17:21:29 UTC+0000	None	7			False	True	False	True	True	True	True	True	
-0x18c1710	svchost.exe	992	692			2013-10-31 17:21:26 UTC+0000	None	9			False	True	False	True	True	True	True	True	
-0x195c2e0	pythonw.exe	1256	1940			2013-10-31 23:09:24 UTC+0000	None	5			False	True	False	True	True	True	True	True	
-0x1877b38	MagicDisc.exe	1960	1636			2013-10-31 17:21:29 UTC+0000	None	1			False	True	False	True	True	True	True	True	
+offset   	name           	pid 	ppid	prio	image_path_name                                                              	create_time                 	exit_time                   	threads	session_id	handles	is_wow64	pslist	psscan	thrdproc	pspcid	csrss	session	deskthrd	command_line                                                                                                                                                                                                                                                                
+0x25c8830	System         	4   	0   	8   	                                                                             	                            	                            	59     	          	403    	False   	True  	True  	True    	True  	False	False  	False
+0x225ada0	alg.exe        	188 	668 	8   	C:\WINDOWS\System32\alg.exe                                                  	2010-10-29 17:09:09 UTC+0000	                            	6      	0         	107    	False   	True  	True  	True    	True  	True 	True   	True    	C:\WINDOWS\System32\alg.exe
+0x2114938	ipconfig.exe   	304 	968 	8   	                                                                             	2011-06-03 04:31:35 UTC+0000	2011-06-03 04:31:36 UTC+0000	0      	0         	       	False   	True  	True  	False   	True  	False	False  	False
+0x2086978	TSVNCache.exe  	324 	1196	8   	C:\Program Files\TortoiseSVN\bin\TSVNCache.exe                               	2010-10-29 17:11:49 UTC+0000	                            	7      	0         	54     	False   	True  	True  	True    	True  	True 	True   	True    	"C:\Program Files\TortoiseSVN\bin\TSVNCache.exe"
+0x22df020	smss.exe       	376 	4   	11  	\SystemRoot\System32\smss.exe                                                	2010-10-29 17:08:53 UTC+0000	                            	3      	          	19     	False   	True  	True  	True    	True  	False	False  	False   	\SystemRoot\System32\smss.exe
 ...
 ```
+
 
 To make these results persist in a SQLite db, just supply a filename for the db:
 ```
@@ -114,20 +109,20 @@ Will:
 
 Once you have stored some data in a db, you can query it with the -q switch
 ```
-python damm.py -q --db stuxnet.vmem_all.db 
+python damm.py -q --db my_results.db 
 profile:	WinXPSP2x86
 memimg:	WinXPSP2x86/stuxnet.vmem
 COMPUTERNAME:	JAN-DF663B3DBF1
-plugins:	injections processes mutants devicetree privileges sids modules evtlogs connections callbacks handles dlls timers services apihooks mftentries idt messagehooks
+plugins:	processes dlls modules
 ```
 
 Plugins have attributes that can have types for filtering, e.g., for processes:
 (use --info to see for all plugin attributes)
 ```
 	offset
-	name 		    : string
-	pid		        : pid
-	ppid		    : pid
+	name 		: string
+	pid		: pid
+	ppid		: pid
 	image_path_name	: string
 	command_line	: string
 	create_time
@@ -157,15 +152,17 @@ Then use the --diff option for the baseline db
 ```
 python damm.py -p processes --db after.db --diff before.db
 
-Status	offset	name	pid	ppid	image_path_name	command_line	create_time	exit_time	threads	session_id	handles	is_wow64	pslist	psscan	thrdproc	pspcid	csrss	session	deskthrd	
-New	0x1875718	tdl3	1344	1256	C:\DOCUME~1\jawauser\LOCALS~1\Temp\tdl3	"C:\DOCUME~1\jawauser\LOCALS~1\Temp\tdl3"	2013-10-31 23:09:25 UTC+0000	None	1	0	37	False	True	False	True	TrueTrue	True	True	
-New	0x195bbf0	pythonw.exe	1256	1940	C:\Python27\pythonw.exe	C:\Python27\pythonw.exe C:\hkurkt\analyzer.py	2013-10-31 23:09:24 UTC+0000	None	5	0	114	False	True	False	True	True	TrueTrue	True	
-New	0x182cda0	wpabaln.exe	1812	648	C:\WINDOWS\system32\wpabaln.exe	C:\WINDOWS\system32\wpabaln.exe	2013-10-31 23:10:13 UTC+0000	None	1	0	58	False	True	False	True	True	True	TrueTrue	
-Changed	0x1877940	pythonw.exe	1940	1636	C:\Python27\pythonw.exe	"C:\Python27\pythonw.exe"  "C:\Documents and Settings\jawauser\Start Menu\Programs\Startup\agent.pyw" 	2013-10-31 17:21:29 UTC+0000	None	1	0	88->91	False	True	False	True	True	True	True	True	
-Changed	0x190c020	csrss.exe	624	376	\??\C:\WINDOWS\system32\csrss.exe	C:\WINDOWS\system32\csrss.exe ObjectDirectory=\Windows SharedSection=1024,3072,512 Windows=On SubSystemType=Windows ServerDll=basesrv,1 ServerDll=winsrv:UserServerDllInitialization,3 ServerDll=winsrv:ConServerDllInitialization,2 ProfileControl=Off MaxRequestThreads=16	2013-10-31 17:21:25 UTC+0000	None	10	0	336->340	False	True	False	True	TrueFalse	True	True	
-Changed	0x18e4020	svchost.exe	904	692	C:\WINDOWS\system32\svchost.exe	C:\WINDOWS\system32\svchost -k DcomLaunch	2013-10-31 17:21:26 UTC+0000	None	19->17	0	196->195	False	True	False	TrueTrue	True	True	True
+processes
+Status	offset   	name        	pid 	ppid	prio	image_path_name	create_time                 	exit_time	threads	session_id	handles	is_wow64	pslist	psscan	thrdproc	pspcid	csrss	session	deskthrd	command_line
+New	0x17d22e0	pythonw.exe 	1256	1940	8   	               	2013-10-31 23:23:14 UTC+0000	2013-10-31 23:23:19 UTC+0000	0      	          	-268370093	False   	False 	True  	False   	False 	False	False  	False
+Changed	0x18b4d38	svchost.exe 	1080	692 	8   	               	2013-10-31 17:21:26 UTC+0000	         	66->71 	          	       	False   	False 	True  	False   	False 	False	False  	False   	            	
+Changed	0x1915198	winlogon.exe	648 	376 	13  	               	2013-10-31 17:21:25 UTC+0000	         	24->26 	          	       	False   	False 	True  	False   	False 	False	False  	False   	            	
+Changed	0x1900120	services.exe	692 	648 	9   	               	2013-10-31 17:21:25 UTC+0000	         	16->18 	          	       	False   	False 	True  	False   	False 	False	False  	False   	            	
+Changed	0x18b0360	svchost.exe 	1124	692 	8   	               	2013-10-31 17:21:26 UTC+0000	         	5->6   	          	       	False   	False 	True  	False   	False 	False	False  	False   	            	
+Changed	0x1875490	explorer.exe	1636	1596	8   	               	2013-10-31 17:21:27 UTC+0000	         	13->14 	          	       	False   	False 	True  	False   	False 	False	False  	False   	            	
 ...
 ```
+
 The results look similar to the 'processes' plugin output above, but there are some differences:
 * Only results that are new in 'after.db' or that are in both dbs but have some attributes that changed from 'before.db' are displayed (the output here is snipped).
 * Results that are only in the 'after.db' have 'New' in the first ('Status') column
