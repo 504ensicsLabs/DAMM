@@ -62,8 +62,6 @@ optional arguments:
 ### Supported plugins <a name="plugins"/>
 apihooks callbacks connections devicetree dlls evtlogs handles idt injections messagehooks mftentries modules mutants privileges processes services sids timers
 
-Supported plugins: apihooks callbacks connections devicetree dlls evtlogs 
-    handles idt injections messagehooks mftentries modules mutants privileges processes services sids timers
 
 ### Example <a name="example"/>
 Supply a profile as in Volatility, a memory image and a list of plugins to run (or 'all') to get terminal output:
