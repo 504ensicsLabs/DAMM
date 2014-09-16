@@ -23,6 +23,10 @@ An open source memory analysis tool built on top of Volatility. It is meant as a
 
 ## Usage <a name="usage"/>
 ```
+NOTE: Most DAMM output looks better piped through 'less -S' (upper 'S') as in: 
+#python damm.py <some DAMM functionality> | less -S
+```
+```
 python damm.py -h
 usage: damm.py [-h] [-d DIR] [-p PLUGIN [PLUGIN ...]] [-f FILE] [-k KDBG]
                [--db DB] [--profile PROFILE] [--debug] [--info] [--tsv]
