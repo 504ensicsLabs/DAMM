@@ -1,20 +1,18 @@
+# DAMM
+An open source memory analysis tool built on top of Volatility. It is meant as a proving ground for interesting new techniques to be made available to the community. These techniques are an attempt to speed up the investigation process through data reduction and codifying some expert knowledge. It currently supports the following features:
 
-DAMM is an open source memory analysis tool built on top of Volatility. It is meant as a proving ground for interesting new techniques to be made available to the community. These techniques are an attempt to speed up the investigation process through data reduction and codifying some expert knowledge. It currently supports the following features:
-
+## Features
 * ~30 Volaility plugins combined into ~20 DAMM plugins (e.g., pslist, psxview and other elements are combined into a 'processes' plugin)
 * Can run multipe plugins in one invocation
 * The option to store plugin results in sqlite databases for preservation or for "cached" analysis
-* A filtering/type system that allows easily filtering on attributes like pids to see all information related to some process
-  and exact or partial matchine for strings, etc.
-* The ability to show the differences between two databases of results for the same or similar machines
-  and manipulate for the cmdline how the differencing operates
+* A filtering/type system that allows easily filtering on attributes like pids to see all information related to some process and exact or partial matchine for strings, etc.
+* The ability to show the differences between two databases of results for the same or similar machines and manipulate for the cmdline how the differencing operates
 * The ability to warn on certain types of suspicious behavior
 * Output for terminal, tsv or grepable
 
-
-Usage:
-
-vico@otherbarry:~/projects/damm/trunk$ python damm.py -h
+## Usage
+```
+python damm.py -h
 usage: damm.py [-h] [-d DIR] [-p PLUGIN [PLUGIN ...]] [-f FILE] [-k KDBG]
                [--db DB] [--profile PROFILE] [--debug] [--info] [--tsv]
                [--grepable] [--filter FILTER] [--filtertype FILTERTYPE]
@@ -44,12 +42,10 @@ optional arguments:
                         memobjs when diffing
   --warnings            Look for suspicious objects.
   -q                    Query the supplied db (via --db).
+```
 
-
-
-
-
-Supported plugins: apihooks callbacks connections devicetree dlls evtlogs handles idt injections messagehooks mftentries modules mutants privileges processes services sids timers
+### Supported plugins
+apihooks callbacks connections devicetree dlls evtlogs handles idt injections messagehooks mftentries modules mutants privileges processes services sids timers
 
 Plugins have attributes that can have types for filtering, e.g., processes:
 (use --info to see for all plugins)
@@ -73,12 +69,9 @@ Plugins have attributes that can have types for filtering, e.g., processes:
 	session
 	deskthrd
 
-
-
-Simple Usage:
-
+### Example
 Supply a profile as in Volatility, a memory image and a list of plugins to run (or 'all') to get tsv output:
-
+```
 python damm.py --profile WinXPSP2x86 -f memory.dmp -p processes
 (or python damm.py --profile WinXPSP2x86 -f memory.dmp -p processes dlls modules)
 (or python damm.py --profile WinXPSP2x86 -f memory.dmp -p all)
@@ -99,41 +92,40 @@ offset	name	pid	ppid	image_path_name	command_line	create_time	exit_time	threads	
 0x195c2e0	pythonw.exe	1256	1940			2013-10-31 23:09:24 UTC+0000	None	5			False	True	False	True	True	True	True	True	
 0x1877b38	MagicDisc.exe	1960	1636			2013-10-31 17:21:29 UTC+0000	None	1			False	True	False	True	True	True	True	True	
 ...
-
+```
 
 To make these results persist in a sqlite db, just supply a filename for the db:
-
+```
 python damm.py --profile WinXPSP2x86 -f memory.dmp -p processes --db my_results.db
+```
 
 This will print results to the terminal as well as store them in 'my_results.db'
 
 To see the results again:
-
+```
 python damm.py -p processes --db my_results.db
+```
 (Note that you no longer need the memory image or to specify a profile, and the listing will come out pretty close to instantly regardless of how long the original processing took.)
 
 If you later wish to see processes and other plugins:
-
+```
 python damm.py --profile WinXPSP2x86 -p processes dlls modules --db my_results.db
-
+```
 Will:  
-(1) consult the db for the 'processes' output
-(2) run the 'dlls' and 'modules' plugins
-(3) display the results
-(4) store the new results in the db 
+1. consult the db for the 'processes' output
+2. run the 'dlls' and 'modules' plugins
+3. display the results
+4. store the new results in the db 
 
-
-
-
-Differencing:
-
-To use the differencing engine, create 2 databases from 2 distinct memory images - such as one from before and one from after a piece of malware is executed:
-
+### Differencing
+To use the differencing engine, create 2 databases from 2 distinct memory images - such as one from before and one from after a piece of malware is executed
+```
 python damm.py --profile WinXPSP2x86-f before.dmp -p processes --db before.db
 python damm.py --profile WinXPSP2x86 -f after.dmp -p processes --db after.db
+```
 
 Then use the --diff option for the baseline db
-
+```
 python damm.py -p processes --db after.db --diff before.db
 
 Status	offset	name	pid	ppid	image_path_name	command_line	create_time	exit_time	threads	session_id	handles	is_wow64	pslist	psscan	thrdproc	pspcid	csrss	session	deskthrd	
@@ -144,22 +136,18 @@ Changed	0x1877940	pythonw.exe	1940	1636	C:\Python27\pythonw.exe	"C:\Python27\pyt
 Changed	0x190c020	csrss.exe	624	376	\??\C:\WINDOWS\system32\csrss.exe	C:\WINDOWS\system32\csrss.exe ObjectDirectory=\Windows SharedSection=1024,3072,512 Windows=On SubSystemType=Windows ServerDll=basesrv,1 ServerDll=winsrv:UserServerDllInitialization,3 ServerDll=winsrv:ConServerDllInitialization,2 ProfileControl=Off MaxRequestThreads=16	2013-10-31 17:21:25 UTC+0000	None	10	0	336->340	False	True	False	True	TrueFalse	True	True	
 Changed	0x18e4020	svchost.exe	904	692	C:\WINDOWS\system32\svchost.exe	C:\WINDOWS\system32\svchost -k DcomLaunch	2013-10-31 17:21:26 UTC+0000	None	19->17	0	196->195	False	True	False	TrueTrue	True	True	True
 ...
+```
+The results look similar to the 'processes' plugin output above, but there are some differences:
+* Only results that are new in 'after.db' or that are in both dbs but have some attributes that changed from 'before.db' are displayed (the output here is snipped).
+* Results that are only in the 'after.db' have 'New' in the first ('Status') column
+* Results in that have changed between the dbs have a 'Status' of 'Changed', and, importantly, denote the changes DAMM detected with '->': in the last line of output above the number of threads and handles has changed.
 
-The resutls look similar to the 'processes' plugin output above, but there are some differences:
-Only results that are new in 'after.db' or that are in both dbs but have some attributes that changed from 'before.db' are displayed (the output here is snipped).
-Results that are only in the 'after.db' have 'New' in the first ('Status') column
-Results in that have changed between the dbs have a 'Status' of 'Changed', and, importantly, denote the changes DAMM detected with '->': in the last line of output above the number of threads and handles has changed.
-
-
-Unique ID Manipulation
-
+### Unique ID Manipulation
 In order to determine which processes exist in both memory captures above, behind the scenes certain attributes of processes are used to make a unique identifier for each. For example, by default DAMM used the pid, ppid, name, and start time as the unique identifier of a process. This makes sense as these things are unlikey to (shouldn't? can't?) change over the life of the process, as opposed to attributes like the number of threads and handles, which change constantly. This default set works fine for comparisons of objects from memory images from the same boot of the same machine, but what about comparing across memory images taken from different boots of the machine? Or even other machines? The pid, and likely ppid will certainly not be the same, but the name, image path and command line should? 
 
 Comparing a stock XPSP2x86 memory image with our image after some malware ran:
-
+```
 python damm.py -p processes --diff stock_WinXPSP2x86_processes.db --db after_malware.db
-
-Results in every process being tagged as 'New' (except System) becuase by default we use the pid and ppid to make the unique identifier:
 
 ...
 New     0x1874da0       explorer.exe    1636    1596    C:\WINDOWS\Explorer.EXE C:\WINDOWS\Explorer.EXE 2013-10-31 17:21:27 UTC+0000    None    12      0       316     False   True    False   True    True    True    True    True    
@@ -167,13 +155,12 @@ New     0x1983020       smss.exe        376     4       \SystemRoot\System32\sms
 New     0x182cda0       wpabaln.exe     1812    648     C:\WINDOWS\system32\wpabaln.exe C:\WINDOWS\system32\wpabaln.exe 2013-10-31 23:10:13 UTC+0000    None    1       0       58      False   True    False   True    True    True    True
 New     0x1883308       spoolsv.exe     1500    692     C:\WINDOWS\system32\spoolsv.exe C:\WINDOWS\system32\spoolsv.exe 2013-10-31 17:21:27 UTC+0000    None    14      0       113     False   True    False   True    True    True    True
 Changed 0x1bcc830->0x1bcc9c8    System  4       0                       None    None    60->71          209->266        False   True    True->False     True    True    False   False   False   
+```
+Results in every process being tagged as 'New' (except System) becuase by default we use the pid and ppid to make the unique identifier.
 
-
-Becuase of this, DAMM allows the user to specify which attributes of some object can be used to create a unique identifier. If we tell DAMM to just use process name, image_path_name, and command_line:
-
+Because of this, DAMM allows the user to specify which attributes of some object can be used to create a unique identifier. If we tell DAMM to just use process name, image_path_name, and command_line, we get much more reasonable results:
+```
 python damm.py -p processes --diff stock_WinXPSP2x86_processes.db --db after_malware.db -u name image_path_name command_line
-
-We get much more reasoanble results:
 
 Status  offset  name    pid     ppid    image_path_name command_line    create_time     exit_time       threads session_id      handles is_wow64        pslist  psscan  thrdproc        pspcid  csrss   session deskthrd        
 New     0x1860020       wuauclt.exe     548     1080    C:\WINDOWS\system32\wuauclt.exe "C:\WINDOWS\system32\wuauclt.exe" /RunStoreAsComServer Local\[438]SUSDS109850d1d4659d4590c0302d99249922 2013-10-31 17:22:20 UTC+0000    None    7
@@ -198,17 +185,13 @@ Changed 0x1670020->0x18e4020    svchost.exe     868->904        680->692        
 Changed 0x15685e0->0x1883308    spoolsv.exe     1516->1500      680->692        C:\WINDOWS\system32\spoolsv.exe C:\WINDOWS\system32\spoolsv.exe 2011-09-26 01:33:39 UTC+0000->2013-10-31 17:21:27 UTC+0000      None    14      0       159->
 Changed 0x1816ab8->0x190c020    csrss.exe       612->624        384->376        \??\C:\WINDOWS\system32\csrss.exe       C:\WINDOWS\system32\csrss.exe ObjectDirectory=\Windows SharedSection=1024,3072,512 Windows=On SubSystemType=Windows S
 Changed 0x19f7548->0x18afc70    svchost.exe     1200->1124      680->692        C:\WINDOWS\system32\svchost.exe C:\WINDOWS\system32\svchost.exe -k NetworkService       2011-09-26 01:33:37 UTC+0000->2013-10-31 17:21:26 UTC+0000      None
+```
+DAMM now identifies fewer processes as 'New' (including the malware process), allowing the investigator to focus their efforts on these processes.
 
-
-DAMM now identifies many fewer processes as 'New' (including the malware process), allowing the investigator to focus their efforts on these processes.
-
-
-
-
-Filtering
+### Filtering
 
 With all plugins run on a small memory sample, we get ~14,000 memory objects: processes, dlls, modules, etc. What if we have already identified some process or string of interest? Grep can be probematic, especially when searching for pids, so DAMM includes a simple type and filtering system. To filter on objects that have a pid attribute of a certain value:
-
+```
 python damm.py -p processes dlls connections handles after_malware.db --filter pid:1344
 
 processes
@@ -242,21 +225,17 @@ offset	pid	handle_value	granted_access	object_type	name
 0x81902cd0	1344	0x7c	0x100001	File	\Device\KsecDD	
 0xe1aa0ca0	1344	0x80	0x2001f	Key	USER\S-1-5-21-1644491937-789336058-854245398-1003\SOFTWARE\MICROSOFT\WINDOWS\CURRENTVERSION\INTERNET SETTINGS	
 (many lines removed for brevity)
-
-
+```
 This can give a nice overview of the objects associated with a process. 
 
 Even more powerful, diff and filtering can be used in conjunction. I have a memory sample from before a tdl3 infection and one after. Searching for thew string 'tdl' in the before db results in ~600 hits. In the after infection db, there are ~730 hits. (Note that ntdll.dll contain the string tdl.) Using diff and filtering in conjunction as below results in only ~180 hits - a significant reduction. 
-
+```
 python damm.py -p all --diff before_tdl3.db --db after_tdl3.db --filter string:tdl --filtertype partial > string_tdl_diff.txt
+```
 
-
-
-
-Warnings:
-
+### Warnings
 In an attempt to make the traige process even easier, DAMM has a prototype warning system built in to sniff out signs of danger. For the moment it just checks some process parent/child relationships, but the intent is to expand upon this considerably.
-
+```
 python damm.py -p all --db after_tdl3.db  --warnings
 
 < actual processes output removed >
@@ -269,4 +248,4 @@ services.exe (pid: 692) parent process is winlogon.exe as expected.
 svchost.exe (pid: 1080) parent process is services.exe as expected.
 System pid is 4 as expected.
 ...
-
+```
