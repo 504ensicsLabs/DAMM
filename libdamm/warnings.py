@@ -163,12 +163,8 @@ def process_warnings(procs, envars):
     for elem in [x for x in procs if x.fields['name'].lower() in known_processes.keys()]:
 
         # Is process disguised to look like a known_process by transposing two letters?
-        # This may seem a bit backwards: instead of looking at all non-known_processes 
-        # and enumerating all their transpostions and seeing of they match a protected 
-        # process, we're doing the reverse as a possible time saving measure - there 
-        # are few know_processes and potentially many unknown processes. So for each 
-        # known_process, we enumerate all transpositions and see if any match proceeses 
-        # in the memory image.
+        # For each known_process, we enumerate all transpositions and see if any match 
+        # processes in the memory image.
         for trans in transpositions(elem.fields['name']):
             if procs_by_name.get(trans):
                 p = procs_by_name.get(trans)
@@ -242,8 +238,8 @@ def process_warnings(procs, envars):
                 delta = time.mktime(start_time) - time.mktime(system_start)
                 # Is this a reasonable heauristic?
                 if delta > 60:
-                    yield "%s (pid: %s) started %s, long after the machine booted at %s." % (elem.fields['name'], elem.fields['pid'], elem.fields['create_time'], str(system_start))
-
+                    #yield "%s (pid: %s) started %s, long after the machine booted at %s." % (elem.fields['name'], elem.fields['pid'], elem.fields['create_time'], str(system_start))
+                    yield "%s (pid: %s, %s) started %s seconds after boot time which may be suspicious." % (elem.fields['name'], elem.fields['pid'], elem.fields['command_line'], delta)
 
  
 
