@@ -45,10 +45,8 @@ class MFTSet(memobj.MemObjectSet):
         try:
             offset = body.split("|")[1].split("Offset: ")[1].strip(")")
         except:
-            sys.stderr.write("Error: %s\n" % body)
             return False
         return True        
-
 
 
     def get_alloc(self, addr_space):

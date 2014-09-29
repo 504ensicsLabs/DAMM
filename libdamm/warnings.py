@@ -29,39 +29,55 @@ def temp(s):
 
 # Name mangling detectors
 
+# issues: might need an lsplit on unknown processes that might have junk attached
+
 # Did we add in letters, e.g., lsass.exe -> lssass.exe
-def longest_common_substring(s1, s2):
-    m = [[0] * (1 + len(s2)) for i in xrange(1 + len(s1))]
-    longest, x_longest = 0, 0
-    for x in xrange(1, 1 + len(s1)):
-        for y in xrange(1, 1 + len(s2)):
-            if s1[x - 1] == s2[y - 1]:
-                m[x][y] = m[x - 1][y - 1] + 1
-                if m[x][y] > longest:
-                    longest = m[x][y]
-                    x_longest = x
+def matching_lcs(a, b):
+
+    # Borrowed from http://rosettacode.org/wiki/Longest_common_subsequence#Python
+    a = a.split('.')[0]
+    b = b.split('.')[0]
+    lengths = [[0 for j in range(len(b)+1)] for i in range(len(a)+1)]
+    # row 0 and column 0 are initialized to 0 already
+    for i, x in enumerate(a):
+        for j, y in enumerate(b):
+            if x == y:
+                lengths[i+1][j+1] = lengths[i][j] + 1
             else:
-                m[x][y] = 0
-    return s1[x_longest - longest: x_longest]
+                lengths[i+1][j+1] = \
+                    max(lengths[i+1][j], lengths[i][j+1])
+    # read the substring out from the matrix
+    result = ""
+    x, y = len(a), len(b)
+    while x != 0 and y != 0:
+        if lengths[x][y] == lengths[x-1][y]:
+            x -= 1
+        elif lengths[x][y] == lengths[x][y-1]:
+            y -= 1
+        else:
+            assert a[x-1] == b[y-1]
+            result = a[x-1] + result
+            x -= 1
+            y -= 1
+    return result == a
 
 
-# Did we just transpose some pair of letters, e.g., csrss.exe -> crsss.exe
+
 def transpositions(s):
+
     for i, elem in enumerate(s):
+        if i == len(s)-1:
+            break
         begin = s[:i]
         end = s[i:]
         # Same letter, no real transposition
         if end[0] == end[1]:
             continue
         trans = "%s%s%s%s" % (begin, end[1], end[0], end[2:])
+
         yield trans
-        if i == len(s)-2:
-            break
 
-
-def number_substitution():
-    # Detect common number for letter substitutions, e.g., 1 -> i I l or L
-    pass
+ 
 
 suspicious_processes = ['rar.exe', 'reg.exe', 'sc.exe', 'psexec.exe', 'procdump.exe', 'net.exe', 'at.exe',\
                         'schtask.exe', 'cmd.exe', 'net1.exe', 'netstat.exe', 'systeminfo.exe', 'taskkill.exe',\
@@ -96,7 +112,7 @@ def process_warnings(procs, envars):
         'csrss.exe'     : {'image_path' : '%s\system32\csrss.exe' % sysroot, 'user_account' : ['NT AUTHORITY\SYSTEM'], 'prio' : '13', 'starts_at_boot' : True },
         'services.exe'  : {'image_path' : '%s\system32\services.exe' % sysroot, 'parent' : ['wininit.exe'], 'session' : '0', 'prio' : '9', 'starts_at_boot' : True },
         'svchost.exe'   : {'image_path' : '%s\System32\svchost.exe' % sysroot, 'user_account' : ['NT AUTHORITY\SYSTEM', 'LOCAL SERVICE', 'NETWORK SERVICE'], 'parent' : ['services.exe'], 'singleton' : False, 'session' : '0', 'prio' : '8', 'starts_at_boot' : True },
-        'lsm.exe '      : {'image_path' : '%s\System32\lsm.exe' % sysroot, 'user_account' : ['NT AUTHORITY\SYSTEM'], 'parent' : ['wininit.exe'], 'session' : '0', 'prio' : '8', 'childless' : True, 'starts_at_boot' : True },
+        'lsm.exe'      : {'image_path' : '%s\System32\lsm.exe' % sysroot, 'user_account' : ['NT AUTHORITY\SYSTEM'], 'parent' : ['wininit.exe'], 'session' : '0', 'prio' : '8', 'childless' : True, 'starts_at_boot' : True },
         'explorer.exe'  : {'image_path' : '%s\explorer.exe' % sysroot, 'prio' : '8' },
     }
 
@@ -121,21 +137,30 @@ def process_warnings(procs, envars):
         if elem.fields['name'].lower() == 'smss.exe':
             system_start = elem.fields['create_time']
 
+    # There are only a few known processes so in order to detect letter 
+    # swapping name mangling we'll just build a dict of all possibilities
+    known_proc_transpostitons = {}
+    for elem in known_processes.keys():
+        for t in transpositions(elem.split('.')[0]):
+            known_proc_transpostitons[t] = elem
+
+
     # 2010-08-11 06:06:39 UTC+0000     
     system_start = time.strptime(system_start.split('UTC')[0].strip(), '%Y-%m-%d %H:%M:%S')
 
     # Checks for all processes; if the fields are populated, why not?                    
     for elem in procs:
 
-        # Thanks to Barry McIntosh for the idea for this check, and to the sysforensics blog post "Do not fumble the lateral movement"
+        # Thanks to Barry McIntosh for the idea for this check, and to the 
+        # sysforensics blog post "Do not fumble the lateral movement"
         if elem.fields['name'].lower() in suspicious_processes:
-            yield "%s (pid: %s) is suspicious (possible persistence/lateral movement)." % (elem.fields['name'], elem.fields['pid'])
+            yield "%s (pid: %s) is suspicious (possible info gathering/persistence/lateral movement)." % (elem.fields['name'], elem.fields['pid'])
 
         # Look for temp file or directories
         if temp(elem.fields['image_path_name']):
-            yield "%s (pid: %s) image path in temp." % (elem.fields['name'], elem.fields['pid'])            
+            yield "%s (pid: %s) image path in temp: %s." % (elem.fields['name'], elem.fields['pid'], elem.fields['image_path_name'])            
         if temp(elem.fields['command_line']):
-            yield "%s (pid: %s) command line contains temp." % (elem.fields['name'], elem.fields['pid'])
+            yield "%s (pid: %s) command line contains temp: %s." % (elem.fields['name'], elem.fields['pid'], elem.fields['command_line'])
 
         # Fake exit time, still has threads running    
         if (elem.fields['exit_time'] != '') and (elem.fields['threads'] != '0'):
@@ -155,21 +180,20 @@ def process_warnings(procs, envars):
 
         # Is process disguised to look like a known_process by adding letters?
         for proc_name in known_processes.keys():
-            if (elem.fields['name'].lower() != proc_name) and (longest_common_substring(proc_name, elem.fields['name']) == proc_name):
-                yield "%s (pid: %s) is named suspiciously similarly to a Windows process." % (elem.fields['name'], elem.fields['pid'])
+            if (elem.fields['name'].lower() != proc_name) and (matching_lcs(proc_name, elem.fields['name'])):
+                yield "%s (pid: %s) is named suspiciously similarly to a Windows process: %s." % (elem.fields['name'], elem.fields['pid'], proc_name)
+            elif (elem.fields['name'].lower() != proc_name) and (elem.fields['name'].replace('1', 'l').replace('3', 'e').replace('0', 'o').replace('5', 's').lower() == proc_name):
+                yield "%s (pid: %s) is named suspiciously similarly to a Windows process: %s." % (elem.fields['name'], elem.fields['pid'], proc_name)
+
+        # Did we just transpose some pair of letters, e.g., csrss.exe -> crsss.exe
+        # Must also account for junk appended to end of process name
+        if known_proc_transpostitons.get(elem.fields['name'].split('.')[0]):
+            yield "%s (pid: %s) is named suspiciously similarly to a Windows process: %s." % (elem.fields['name'], elem.fields['pid'], known_proc_transpostitons.get(elem.fields['name'].split('.')[0]))
+
 
 
     # Checks all for known processes, using constraints dict above        
     for elem in [x for x in procs if x.fields['name'].lower() in known_processes.keys()]:
-
-        # Is process disguised to look like a known_process by transposing two letters?
-        # For each known_process, we enumerate all transpositions and see if any match 
-        # processes in the memory image.
-        for trans in transpositions(elem.fields['name']):
-            if procs_by_name.get(trans):
-                p = procs_by_name.get(trans)
-                yield "%s (pid: %s) is named suspiciously similarly to a Windows process." % (p.fields['name'], p.fields['pid'])
-
 
         # For allocated, running processes only.       
         if elem.fields['pslist'] == 'True' and elem.fields['exit_time'] == '':
@@ -199,7 +223,7 @@ def process_warnings(procs, envars):
                     if e.fields['name'] == elem.fields['name'] and e.fields['pslist'] == 'True' and e.fields['exit_time'] == '': 
                         instances += 1
                 if instances != 1:
-                    yield "%s (pid: %s) has %s instances. Only one instance should exist!" % (elem.fields['name'], elem.fields['pid'], instances)
+                    yield "%s (pid: %s) has %s instances. Only one instance should exist." % (elem.fields['name'], elem.fields['pid'], instances)
 
             if constraints.get('image_path'):
                 expected = constraints['image_path']
@@ -305,12 +329,14 @@ def privilege_warnings(privs, envars):
 def mftentry_warnings(mftentries, envars):
 
     for entry in mftentries:
+        # Check for alternate data streams
         if "DATA ADS" in entry.fields['name']:
             yield "File: %s has an ADS." % (entry.fields['name'])
+        # Check for suspicous processes in prefetch
         if entry.fields['name'].lower().endswith('pf'):
             for elem in suspicious_processes:
                 if elem.lower() in  entry.fields['name'].lower():
-                    yield "File: %s is a prefetch entry for a suspicious process." % (entry.fields['name'])
+                    yield "%s is a prefetch entry for a suspicious process." % (entry.fields['name'])
 
 
 def callback_warnings(callbacks, envars):
