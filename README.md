@@ -17,14 +17,14 @@ An open source memory analysis tool built on top of Volatility. It is meant as a
 * Can run multiple plugins in one invocation
 * The option to store plugin results in SQLite databases for preservation or for "cached" analysis
 * A filtering/type system that allows easily filtering on attributes like pids to see all information related to some process and exact or partial matching for strings, etc.
-* The ability to show the differences between two databases of results for the same or similar machines and manipulate for the cmdline how the differencing operates
+* The ability to show the differences between two databases of results for the same or similar machines and manipulate from the cmdline how the differencing operates
 * The ability to warn on certain types of suspicious behavior
 * Output for terminal, tsv or grepable
 
 ## Usage <a name="usage"/>
 ```
 NOTE: Most DAMM output looks better piped through 'less -S' (upper 'S') as in: 
-#python damm.py <some DAMM functionality> | less -S
+#python damm.py <some DAMM functionality> | less -S (for default output format)
 ```
 ```
 python damm.py -h
@@ -60,6 +60,9 @@ optional arguments:
 ```
 
 ### Supported plugins <a name="plugins"/>
+
+See #python damm.py --info
+
 apihooks callbacks connections devicetree dlls evtlogs handles idt injections messagehooks mftentries modules mutants privileges processes services sids timers
 
 
@@ -140,13 +143,13 @@ Plugins have attributes that can have types for filtering, e.g., for processes:
 These attributes and types can be leveraged by the differencing and filtering functions of DAMM
 
 ### Differencing <a name="differencing"/>
-To use the differencing engine, create 2 databases from 2 distinct memory images - such as one from before and one from after a piece of malware is executed
+To use the differencing engine, create 2 databases from 2 distinct memory images, such as one from before and one from after a piece of malware is executed
 ```
 python damm.py --profile WinXPSP2x86-f before.dmp -p processes --db before.db
 python damm.py --profile WinXPSP2x86 -f after.dmp -p processes --db after.db
 ```
 
-Then use the --diff option for the baseline db
+Then use the --diff option for the baseline db (here, the db from the uninfected memory image).
 ```
 python damm.py -p processes --db after.db --diff before.db
 
@@ -164,10 +167,10 @@ Changed	0x1875490	explorer.exe	1636	1596	8   	               	2013-10-31 17:21:2
 The results look similar to the 'processes' plugin output above, but there are some differences:
 * Only results that are new in 'after.db' or that are in both dbs but have some attributes that changed from 'before.db' are displayed (the output here is snipped).
 * Results that are only in the 'after.db' have 'New' in the first ('Status') column
-* Results in that have changed between the dbs have a 'Status' of 'Changed', and, importantly, denote the changes DAMM detected with '->': in the last line of output above the number of threads and handles has changed.
+* Results in that have changed between the dbs have a 'Status' of 'Changed', and, importantly, denote the changes DAMM detected with '->': in the last line of output above the number of threads has changed.
 
 ### Unique ID Manipulation <a name="unique-id"/>
-In order to determine which processes exist in both memory captures above, behind the scenes certain attributes of processes are used to make a unique identifier for each. For example, by default DAMM used the pid, ppid, name, and start time as the unique identifier of a process. This makes sense as these things are unlikely to (shouldn't? can't?) change over the life of the process, as opposed to attributes like the number of threads and handles, which change constantly. This default set works fine for comparisons of objects from memory images from the same boot of the same machine (e.g., using VM snapshots), but what about comparing across memory images taken from different boots of the machine? Or even other machines? The pid, and likely ppid will certainly not be the same, but the name, image path and command line should be.
+In order to determine which processes exist in both memory captures above, behind the scenes certain attributes of processes are used to make a unique identifier for each. For example, by default DAMM used the pid, ppid, name, and start time as the unique identifier of a process. This makes sense as these things are unlikely to (shouldn't? can't?) change over the life of the process, as opposed to attributes like the number of threads and handles, which change constantly. This default set works fine for comparisons of objects from memory images from the same boot of the same machine (e.g., using VM snapshots), but what about comparing across memory images taken from different boots of the machine? Or even other machines? The pid, and ppid will likely not be the same, but the name, image path and command line should be.
 
 Comparing a stock XPSP2x86 memory image with our image after some malware ran:
 ```
@@ -216,7 +219,7 @@ DAMM now identifies fewer processes as 'New' (including the malware process), al
 
 With all plugins run on a small memory sample, we get ~14,000 memory objects: processes, dlls, modules, etc. What if we have already identified some process or string of interest? Grep can be problematic, especially when searching for pids, so DAMM includes a simple type and filtering system. To filter on objects that have a pid attribute of a certain value:
 ```
-python damm.py -p processes dlls connections handles after_malware.db --filter pid:1344
+python damm.py -p processes dlls connections handles --db after_malware.db --filter pid:1344
 
 processes
 offset	name	pid	ppid	image_path_name	command_line	create_time	exit_time	threads	session_id	handles	is_wow64	pslist	psscan	thrdproc	pspcid	csrss	session	deskthrd	
@@ -252,7 +255,7 @@ offset	pid	handle_value	granted_access	object_type	name
 ```
 This can give a nice overview of the objects associated with a process. 
 
-Even more powerful, diff and filtering can be used in conjunction. I have a memory sample from before a tdl3 infection and one after. Searching for the string 'tdl' in the before db results in ~600 hits. In the after infection db, there are ~730 hits. (Note that ntdll.dll contain the string tdl.) Using diff and filtering in conjunction as below results in only ~180 hits - a significant reduction. 
+Even more powerful, diff and filtering can be used in conjunction. I have a memory sample from before a tdl3 infection and one after. Searching for the string 'tdl' in the before db results in ~600 hits. In the after infection db, there are ~730 hits. (Note that ntdll.dll contain the string tdl.) Using diff and filtering in conjunction as below results in only ~180 hits - a significant reduction. Note that for string and pid filtering, DAMM defaults to exact matching. Using the --filtertype partial option changes the fileterming to partial matching.
 ```
 python damm.py -p all --diff before_tdl3.db --db after_tdl3.db --filter string:tdl --filtertype partial > string_tdl_diff.txt
 ```
@@ -283,8 +286,11 @@ Plus more!
 python damm.py --db after_tdl3.db  --warnings
 ```
 
-# Finally <a name="finally"/>
+See the warnings.py file for much more information on what DAMM checks for.
+
 Thanks to the Volatility team for the Art of Memory Forensics book as well as the Volatility cheat sheet where many of these warning ideas came from!
+
+# Finally <a name="finally"/>
 
 For questions or comments: damm@504ensics.com
 For bug reports, please use the github issue tracker.
