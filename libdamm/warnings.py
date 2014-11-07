@@ -78,12 +78,10 @@ def transpositions(s):
         yield trans
 
  
-
 suspicious_processes = ['rar.exe', 'reg.exe', 'sc.exe', 'psexec.exe', 'procdump.exe', 'net.exe', 'at.exe',\
                         'schtask.exe', 'cmd.exe', 'net1.exe', 'netstat.exe', 'systeminfo.exe', 'taskkill.exe',\
                         'tasklist.exe', 'powershell.exe', 'nbtstat.exe', 'xcopy.exe', 'nslookup.exe', 'quser.exe',\
                         'ping.exe', 'ftp.exe', 'bitsadmin.exe', 'route.exe', 'regsvr32.exe', 'makecab.exe']
-
 
 
 def process_warnings(procs, envars):
@@ -209,11 +207,12 @@ def process_warnings(procs, envars):
 
             if constraints.get('parent'):
                 expected = constraints['parent']
+                actual = None
                 ppid = elem.fields['ppid']
-                if ppid == '0':
-                    actual = 'None'
-                else:
-                    actual = procs_by_pid.get(elem.fields['ppid']).fields['name']
+                if ppid != '0':
+                    parent = procs_by_pid.get(elem.fields['ppid'])
+                    if parent:
+                        actual = parent.fields['name']
                 if actual and actual.lower() not in [p.lower() for p in expected]:
                     yield "%s (pid: %s) parent process expected: %s, actual: %s." % (elem.fields['name'], elem.fields['pid'], expected, actual)
 

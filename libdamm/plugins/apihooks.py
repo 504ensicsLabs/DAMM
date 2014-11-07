@@ -22,7 +22,7 @@
 #
 
 import libdamm.memory_object as memobj
-
+import ntpath
 
 def getPluginObject(vol):
     return APIHookSet(vol)
