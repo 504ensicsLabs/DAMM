@@ -450,7 +450,7 @@ class API:
                         for idx, attr in enumerate(elem.fields.keys()):
                             field_lengths[idx] = max(field_lengths[idx], len(elem.fields[attr]))
 
-                yield "\n{}".format(plugname)  # plugin name
+                #yield "\n{}".format(plugname)  # plugin name
                 yield "Status\t%s" % "\t".join(['{column: <{width}}'.format(column=x, width=field_lengths[i]) for i, x in enumerate(elem.fields.keys())])  # column headers
 
                 for elem in new:                    
