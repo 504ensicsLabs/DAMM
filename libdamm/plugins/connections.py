@@ -147,7 +147,7 @@ class ConnectionSet(memobj.MemObjectSet):
 
 
     def sort_elems(self, elems):
-        elems.sort(key=lambda x: int(x.fields['pid']))
+        elems.sort(key=lambda x: 0 if x.fields['pid'] == '' else int(x.fields['pid']))
         return elems
 
 
