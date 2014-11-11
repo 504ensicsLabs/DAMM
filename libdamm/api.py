@@ -33,30 +33,31 @@ class API:
 
     def __init__(self, plugins=None, extra_dir=None, memimg='', profile='', kdbg='0', filterp=None, filterp_type=None, output=None, db=None, debug=False, unique_id_fields=None, diff=None):
 
-        # use the supplied db file
         set_debug(debug)
+
+        # Use the supplied db file
         self.db = db
         self.db_ops = db_ops.DBOps()
         self.diff = diff
 
-        # set up plugin system
+        # Set up plugin system
         self.pluglib = plugin.PluginLibrary()
         self.pluglib.addPluginDir(os.path.join(os.path.dirname(__file__), 'plugins'))
         self.plugins = plugins
         self.plugins = self.pluglib.getPluginList() if (self.plugins and self.plugins[0].lower() == 'all') else self.plugins
-        # add user specified directory of plugins
+        # Add user specified directory of plugins
         if extra_dir:
             self.extra_dir = extra_dir
             self.pluglib.addPluginDir(self.extra_dir)
         
-        # set up user defined output filter
+        # Set up user defined output filter
         self.filterp = filterp
         self.filterp_name = filterp.split(":")[0] if filterp else None
         self.filterp_value = filterp.split(":")[1] if filterp else None
         self.filterp_type = filterp_type if filterp_type else 'exact'
         self.unique_id_fields = unique_id_fields        
 
-        # settings for the volatility subsystem
+        # Settings for the volatility subsystem
         self.memimg = memimg
         self.profile = profile
         self.kdbg = kdbg
@@ -71,14 +72,21 @@ class API:
 
     def set_debug(self, bool):
         '''
-        Tuen on/off debugging.
+        Turn on/off debugging
+
+        @bool: True for debug on
         '''
         set_debug(bool)
 
 
     def check_warnings(self, plugins, db):
         '''
-        Check for inidcators of malicious activity. 
+        Check for inidcators of malicious activity
+
+        @plugins: list of plugin names
+        @db: a DAMM db
+
+        @return: generator of warnings results
         '''
         return warnings.check_warnings(plugins, db)
 
@@ -86,6 +94,11 @@ class API:
     def __filter_passed(self, elem, typedefs):
         '''
         Does the given memobj pass the specified filter? 
+
+        @elem: a memobj
+        @typedefs: the memobj's typedefs
+
+        @return: True if filter passed
         '''
         filter_passed = False
         # for each field this memobj has of the filter_name type (e.g., pid and ppid)
@@ -108,7 +121,13 @@ class API:
 
     def filter_plugin(self, plug_results, setobj, changed=False):
         '''
-        Apply specified filter to plugin results.
+        Apply specified filter to plugin results
+
+        @plug_results: list of plugin output
+        @setobj: the setobj for the plugin
+        @changed: True if plug_results is from a diff operation
+
+        @return: list of filtered plugin results 
         '''
         # If there is no filter defined, return as is.
         if self.filterp == None:
@@ -139,7 +158,14 @@ class API:
 
     def filter_diff(self, changed, new, setobj):
         '''
-        Filter a set of diff results.
+        Filter a set of diff results
+
+        @changed: list of pairs of changed plugin results from diff operation
+        @new: list of new plugin results from diff operation
+        @setobj: the setobj for the plugin
+
+        @return: list of filtered changed objects, list of filtered new 
+            objects, the setobj for the plugin
         '''
         # If there is no filter defined, return as is.
         if self.filterp == None:
@@ -154,10 +180,11 @@ class API:
 
     def run_plugin(self, plug):
         '''                
-        Run a single plugin.
+        Run a single plugin
 
         @plug: string name of plugin to run
-        @reurn LIST
+
+        @return list of plugin results
         '''
         # Are we an empty db? If so, init the db.
         if self.db_ops.db_empty(self.db):
@@ -198,9 +225,9 @@ class API:
 
     def run_plugins(self):
         '''
-        Run a set of plugins.
+        Run a set of plugins
 
-        @ return: generator of memobjs
+        @return: generator of memobj results of running plugins
         '''
         for curr in self.plugins:
             for elem in self.run_plugin(curr):
@@ -209,9 +236,9 @@ class API:
 
     def run_plugins_grepable(self):
         '''
-        Run a set of plugins and return results in grepable format.
+        Run a set of plugins and return results in grepable format
 
-        @ return: generator of memobjs
+        @return: generator of grepable string results of running plugins
         '''
         for curr in self.plugins:
             for elem in self.run_plugin(curr):
@@ -220,9 +247,10 @@ class API:
 
     def run_plugins_screen(self):
         '''
-        Run a set of plugins and return results in format for terminal display.
+        Run a set of plugins and return results in format for terminal display
 
-        @ return: generator of memobjs
+        @return: generator of screen formatted string results of running 
+            plugins
         '''
         for curr in self.plugins:
             # Get appropriate fields lengths for each attribute of the memobjs
@@ -257,9 +285,9 @@ class API:
 
     def run_plugins_tsv(self):
         '''
-        Just like run_plugins but generates a table formatted (tsv) report for printing.
+        Run a set of plugins and return results in tsv format
 
-        @return: string lines of report text
+        @return: generator of tsv formatted string results of running plugins
         '''
         for curr in self.plugins:
             gen = self.run_plugin(curr)
@@ -285,14 +313,15 @@ class API:
     def __memobj_equals(self, first, second, setobj):
         '''
         Using the fields in diff_fields list, determine if two objects are 
-        equal (i.e., their field values are equal).
+        equal (i.e., their field values are equal)
 
         @first: a memobj
-        @second: another memobj
+        @second: another memobj of the same type
+        @setobj: the setobj for the memobj type
 
         @return: True if equal
         '''
-        # use diff_fields if some were specified, else use everything available
+        # Use diff_fields if some were specified, else use everything available
         for field in setobj.get_diff_fields():
             debug('Diffing on field: %s' % field)
             foundFirst = field in first.fields
@@ -308,6 +337,11 @@ class API:
     def get_object_dict(self, db, table):
         '''
         Return dict of unique_id : memobj
+
+        @db: a DAMM db
+        @table: the table name to make an object dictionary of
+
+        @return: a dict of (unique_id : memobj), the setobj for the memobj type
         '''
         # Table name is of form modulename_setobjname
         # module name == plugin name
@@ -329,6 +363,11 @@ class API:
         '''
         Perform the differencing operation on two sets of memobjs pulled from
         the two specified dbs.
+
+        @table: the tsble to perform the diff operation on
+
+        @return: list of pairs of changed plugin results from diff operation, 
+            list of new plugin results from diff operation, the setobj for the plugin
         '''
         unchanged = []  # unchanged memobjs; don't need this for the moment
         changed = []  # memobjs exist in both dbs, some field values differ
@@ -362,7 +401,8 @@ class API:
         '''
         Return the differences between two dbs.
 
-        @return list of (list of changed memobjs, list of new memobjs, plugin name)
+        @return: list of (list of changed memobjs, list of new memobjs, plugin 
+            name)
         '''        
         # we can only compare tables that exist in both dbs
         diff_tables = self.db_ops.get_tables(self.diff)
@@ -387,7 +427,7 @@ class API:
         '''
         Return the differences between two dbs in grepable format.
 
-        @return list of (list of changed memobjs, list of new memobjs, plugin name)
+        @return: generator of plugin name, new memobjs, changed memobjs
         '''            
         for changed, new, plugname in self.do_diffs():
 
@@ -403,7 +443,6 @@ class API:
 
                 if changed:
                     for memobj in changed:
-
                         old, new = memobj
                         res = ""
                         for field in old.fields.keys():
@@ -419,9 +458,9 @@ class API:
 
     def do_diffs_screen(self):        
         '''
-        Return the differences between two dbs in terminal formatted output.
+        Return the differences between two dbs in screen formatted output.
 
-        @return list of (list of changed memobjs, list of new memobjs, plugin name)
+        @return: generator of plugin name, new memobjs, changed memobjs
         '''        
         for changed, new, plugname in self.do_diffs():
             #print "new: %s" % new
@@ -450,14 +489,12 @@ class API:
                         for idx, attr in enumerate(elem.fields.keys()):
                             field_lengths[idx] = max(field_lengths[idx], len(elem.fields[attr]))
 
-                #yield "\n{}".format(plugname)  # plugin name
                 yield "Status\t%s" % "\t".join(['{column: <{width}}'.format(column=x, width=field_lengths[i]) for i, x in enumerate(elem.fields.keys())])  # column headers
 
                 for elem in new:                    
                     yield "New\t%s" % "\t".join(['{column: <{width}}'.format(column=elem.fields[x], width=field_lengths[i]) for i, x in enumerate(elem.fields.keys())]).strip()
 
                 for elem in changed:
-
                     old, new = elem
                     res = ""
                     for i, field in enumerate(old.fields.keys()):
@@ -475,7 +512,7 @@ class API:
         '''
         Just like do_diffs but generates a tsv formatted report for printing.
 
-        @return: generator of string lines of report text
+        @return: generator of plugin name, new memobjs, changed memobjs
         '''
         for changed, new, plugname in self.do_diffs():
 
@@ -488,7 +525,7 @@ class API:
 
                 header_done = False
 
-                # for each new memobj, yield
+                # for each new memobj, yield output lines
                 if new:
                     for memobj in new:
                         if not header_done:
@@ -497,6 +534,7 @@ class API:
 
                         yield "New\t%s" % "".join([("%s\t" % memobj.fields[x]) for x in memobj.fields.keys()])  # memobj
 
+                # for each changed memobj, yield output lines        
                 if changed:
                     for memobj in changed:
 
@@ -520,11 +558,19 @@ class API:
     # Getter Setter Goodness (Madness?)
 
     def query_db(self):
+        '''
+        @return: the list of envars stored in the db, the list of tables stored 
+            in the db
+        '''
         tables = self.db_ops.get_tables(self.db)
         envars = self.db_ops.get_meta(self.db)
         return envars, tables
 
+
     def get_pluglib(self):
+        '''
+        @return: the library of loaded plugins
+        '''        
         return self.pluglib
 
 
@@ -534,11 +580,13 @@ class API:
         '''
         return plugin.loaded_plugins(self.pluglib)
 
+
     def loaded_plugins_info(self):
         '''
         @return: string info on loaded plugin memobjs with fields
         '''
         return plugin.loaded_plugins_info(self.pluglib)
+
 
     def vol_profiles_info(self):
         '''
@@ -546,12 +594,17 @@ class API:
         '''
         return self.vol.vol_profiles_list()
 
+
     def get_vol_profiles(self):
         return self.vol.vol_profiles()
 
 
     def get_vol(self):
+        '''
+        @return: the underlying Volsetup instance
+        '''
         return self.vol
+
 
     def set_plugins(self, plugins):
         '''
@@ -562,11 +615,13 @@ class API:
         self.plugins = plugins
         self.plugins = self.pluglib.getPluginList() if (self.plugins[0].lower() == 'all') else self.plugins
 
+
     def get_plugins(self):
         '''
         @return list of strings of plugin names to run
         '''
         return self.plugins
+
 
     def set_extra_dir(self, extra_dir):
         '''
@@ -577,11 +632,13 @@ class API:
         self.extra_dir = extra_dir
         self.pluglib.addPluginDir(self.extra_dir)
 
+
     def get_extra_directory(self):
         '''
         @ return: string name of extra directory of plugins
         '''
         return self.extra_dir
+
 
     def set_memimg(self, fname):
         '''
@@ -591,11 +648,13 @@ class API:
         '''
         self.vol.set_memimg(fname)
 
+
     def get_memimg(self):
         '''
         @return name if memory image file 
         '''
         return self.vol.config.location
+
 
     def set_profile(self, profile):
         '''
@@ -605,19 +664,22 @@ class API:
         '''
         self.vol.set_profile(profile)
 
+
     def get_profile(self):
         '''
         @return: string for Volatility profile 
         '''
         return self.vol.config.profile
 
+
     def set_kdbg(self, kdbg):
         '''
-        Set the Voltility kdbg to use, e.g., WinXPSP2x86.
+        Set the Voltility kdbg to use
 
         @profile: hex string Volatility kdbg
         '''
         self.vol.set_kdbg(kdbg)
+
 
     def get_kdbg(self):
         '''
@@ -625,19 +687,23 @@ class API:
         '''
         return self.vol.config.kdbg
 
+
     def set_filterp(self, filterp):
         '''
         Set the filter to apply to results.
 
-        @filterp: string representation of colon separated filter name and value, e.g., pid:42
+        @filterp: string representation of colon separated filter name and 
+            value, e.g., pid:42
         '''
         self.filterp = filterp
 
+
     def get_filterp(self):
         '''
-        @return # string representation of filter name and value
+        @return: string representation of filter name and value
         '''
         return self.filterp
+
 
     def set_filterp_type(self, filterp_type):
         '''
@@ -647,11 +713,13 @@ class API:
         '''
         self.filterp_type = filterp_type
 
+
     def get_filterp_type(self):
         '''
         @return: string filterp type, either 'exact' or 'partial'
         '''
         return self.filterp_type
+
 
     def set_db(self, db):
         '''
@@ -662,9 +730,10 @@ class API:
         '''
         self.db = db
 
+
     def get_db(self):
         '''
-        @return:  string name of database to use 
+        @return: string name of database to use 
         '''
         return self.db
 
@@ -677,6 +746,4 @@ class API:
         Initialize the underlying Volatility runtime.
         '''
         return volsetup.VolSetup(self.profile, self.kdbg, self.memimg)
-
-
 

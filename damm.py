@@ -33,22 +33,22 @@ def parse_args(argv):
     parser.add_argument('--db', help='SQLite db file, for efficient input/output') 
     parser.add_argument('--profile', help='Volatility profile for the images (e.g. WinXPSP2x86)')
     parser.add_argument('--debug', help='Print debugging statements', action='store_true')
-    parser.add_argument('--info', help='Print available volatility profiles, plugins', action='store_true')
+    parser.add_argument('--info', help='Print available volatility profiles, and DAMM plugins', action='store_true')
     parser.add_argument('--tsv', help='Print screen formatted output.', action='store_true')
     parser.add_argument('--grepable', help='Print in grepable text format', action='store_true')
     parser.add_argument('--filter', help='Filter results on name:value pair, e.g., pid:42')
     parser.add_argument('--filtertype', help='Filter match type; either "exact" or "partial", defaults to partial')
-    parser.add_argument('--diff', help='Diff the imageFile|db with this db file as a baseline', metavar='BASELINE')
+    parser.add_argument('--diff', help='Diff the db with this db file as a baseline', metavar='BASELINE')
     parser.add_argument('-u', nargs='+', help='Use the specified fields to determine uniqueness of memobjs when diffing', metavar='FIELD')
-    parser.add_argument('--warnings', help='Look for suspicious objects.', action='store_true')
-    parser.add_argument('-q', help='Query the supplied db (via --db).', action='store_true')
+    parser.add_argument('--warnings', help='Look for suspicious objects', action='store_true')
+    parser.add_argument('-q', help='Query the supplied db (via --db)', action='store_true')
 
     return parser.parse_args()
 
 
 def main(argv=None):
     '''
-    
+    Main routine for the DAMM command line interface.
     '''
     args = parse_args(argv)
 
@@ -75,13 +75,11 @@ def main(argv=None):
         print "plugins:\t%s" % " ".join([x.split("_")[0] for x in tables if x != 'META'])     
         sys.exit()
 
-
     if args.warnings:
         warns = damm.check_warnings(damm.get_plugins(), args.db)
         for elem in warns:
             print elem
         sys.exit()    
-
 
     if args.p is None:
         print "You must specify plugins to run."
@@ -147,6 +145,7 @@ def main(argv=None):
                 print "%s is not a valid profile." % args.profile 
                 sys.exit()
 
+        # If no db is supplied, we use a temp db for all operations
         kill_tempdb = False    
         if not args.db:
             tempdb = tempfile.NamedTemporaryFile()
@@ -163,7 +162,7 @@ def main(argv=None):
         for elem in results:
             print elem        
 
-
+        # If we created a temp db, clean up    
         if kill_tempdb:
             tempdb.close()
 

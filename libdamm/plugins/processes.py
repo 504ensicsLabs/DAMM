@@ -25,18 +25,32 @@ import libdamm.memory_object as memobj
 
 
 def getPluginObject(vol):
+    '''
+    Aid for introspection to load plugins
+
+    @return: a ProcessSet instance
+    '''
     return ProcessSet(vol)
 
+
 def getFields():
+    '''
+    Aid for introspection to load plugins
+
+    @return: ordered list of Process fields keys
+    '''
     return Process().get_field_keys()
 
 
 class ProcessSet(memobj.MemObjectSet):
     '''
-    Manages sets of Windows processes parsed from memory dumps.
+    Manage sets of Windows processes parsed from memory dumps
     '''
     @staticmethod
     def get_field_typedefs():
+        ''' 
+        @return: the type definitions for filtering for Process memobjs
+        '''
         defs = {}
         defs['pid'] = ['pid', 'ppid']
         defs['time'] = ['create_time', 'exit_time']
@@ -65,6 +79,9 @@ class ProcessSet(memobj.MemObjectSet):
 
 
     def get_unique_id(self, proc):
+        '''
+        @return: the default unique id for Process memobjs
+        '''
         return (proc.fields['pid'], proc.fields['name'], proc.fields['ppid'], proc.fields['create_time'])
 
 

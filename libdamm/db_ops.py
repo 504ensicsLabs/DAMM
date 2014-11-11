@@ -32,7 +32,7 @@ class DBOps:
 
     def get_tables(self, db):
         '''
-        Get table names from a db.
+        Get table names from a db
 
         @db: a DAMM db
 
@@ -48,7 +48,7 @@ class DBOps:
 
     def get_rows(self, db, table):
         '''
-        Get rows from a db table.
+        Get rows from a db table
 
         @db: a DAMM db
         @table: string name of table to get rows from
@@ -65,14 +65,17 @@ class DBOps:
 
     def db_empty(self, db):
         '''
-        Is the db empty?
+        @return: True if the db is empty
         '''
         return self.get_tables(db) == []
 
 
     def in_db(self, db, table_name):
         '''
-        Is the specified table in the specified db.
+        @db: a DAMM db
+        @table_name: a DAMM db table name
+
+        @return: True if the specified table in the specified db
         '''
         conn = sqlite3.connect(db)
         res = False
@@ -86,7 +89,13 @@ class DBOps:
     def init_db(self, db, memimg, profile, env):
         '''
         If this is a new db, store some metadata: filename of the originating
-        memory image, and the profile for the image.
+        memory image, and the profile for the image, and some environment 
+        variables for the system
+
+        @db: a DAMM db
+        @memimg: the file name of the memory image for the db
+        @profile: the string profile name for the memory image
+        @env: the list of environment data for the memory image
         '''
         conn = sqlite3.connect(db)
         cmd = "create table META (varname text, varval text)"
@@ -106,14 +115,18 @@ class DBOps:
 
     def get_meta(self, db):
         '''
-        Return the filename, profile and set of tables stored in the db. 
+        @db: a DAMM db
+
+        @return: the filename, profile and set of tables stored in the db 
         '''
         return self.get_rows(db,'META')
 
 
     def get_table_name(self, setobj):
         '''
-        Return the proper talbe name for the given memobj type.
+        @setobj: a setobj for the memobj type
+
+        @return: the table name for the given memobj type
         '''
         return "%s_%s" % (setobj.__module__, setobj.__class__.__name__)
 
@@ -121,6 +134,9 @@ class DBOps:
     def create_table(self, conn, setobj):
         '''
         Create a new db table for the specified memobj type.
+
+        @conn: a db connection object
+        @setobj: a setobj for the memobj type
         '''
         command = "create table %s (" % (self.get_table_name(setobj))
         for elem in setobj.get_child().fields.keys():
@@ -133,6 +149,10 @@ class DBOps:
     def __insert_into_table(self, conn, memobj, setobj):
         '''
         Insert a single memobj into a db.
+
+        @conn: a db connection object
+        @memobj: a memobj to insert
+        @setobj: a setobj for the memobj type
         '''
         fields = tuple([memobj.fields[field] for field in memobj.fields.keys()])
         qms = "?"
@@ -143,14 +163,12 @@ class DBOps:
         conn.execute(cmd, fields)
 
 
-
     def insert_plugin(self, setobj, db, memimg):
         '''
         Run plugin against memimg and insert into db.
 
-        @setobj: memobj set object, e.g., ProcessSet
-        @conn: connection to the databse use
-
+        @setobj: a setobj for the plugin type
+        @conn: a db to insert into
         '''
         conn = sqlite3.connect(db)
         self.create_table(conn, setobj)

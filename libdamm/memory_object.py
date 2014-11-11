@@ -25,15 +25,10 @@ from utils import debug
 from collections import OrderedDict
 
 
-#def getDefaultDiffFields():
-#    return getPluginObject().get_child().fields[diff_fields]
-
-
 class MemObjectSet(object):
     '''
     The parent class for all sets of objects parsed from a memory dump.
     '''
-
     @staticmethod
     def get_field_typedefs():
         '''
@@ -46,21 +41,28 @@ class MemObjectSet(object):
 
     def __init__(self, vol):
         '''
-        @profile: a valid volatility profile, e.g. WinXPSP2x86
-        @kdbg: the address of the KDBG structure in the memory dumps
-        @vol_setup: an optional instance of class VolSetup
+        @vol: a Volsetup object
         '''
         self.vol = vol
         self.memobjs = []
 
 
     def get_child(self):
+        '''
+        Each setobj has a corresponding memobj
+
+        @return: a memobj instance for the setobj
+        '''
         return None
 
 
     def memobj_from_row(self, row):
         '''
-        Convert db row back to memobj.
+        Convert db row back to memobj
+
+        @row: a DAMM db row
+
+        @return: a memobj created from the row
         '''
         memobj = self.get_child()
         fields = memobj.fields.keys()
@@ -70,9 +72,11 @@ class MemObjectSet(object):
         return memobj
 
 
-    def analyze_file(self, memimg):
+    def analyze_file(self):
         '''
-        Parse all the things from memimg
+        Parse all the memobjs from memimg
+
+        @return: generator of memobjs 
         '''
         for elem in self.get_all():
             debug("analyze_file: %s" % elem)
@@ -82,12 +86,12 @@ class MemObjectSet(object):
 
     def get_offset(self, vol_obj, convert_to_phys=False):
         '''
-        Returns the physical offset of an object form a memory dump.
+        Return the offset of an object form a memory dump
 
         @vol_object: an object from a memory dump
         @convert_to_physical: if True convert virual address to physical
 
-        @return: a hex formatted physics address
+        @return: a hex formatted address
         '''
         offset = vol_obj.obj_offset
         if convert_to_phys:
@@ -97,7 +101,7 @@ class MemObjectSet(object):
 
     def get_all(self):
         '''
-        Accumulates all instances of an object type in a memory image. Some
+        Accumulate all instances of an object type in a memory image. Some
         memobjs will have allocated and unallocated instances in a memory
         capture, collected by get_alloc() and get_scan() functions respectively
 
@@ -108,7 +112,7 @@ class MemObjectSet(object):
 
         @addr_space: the currently valid volatility address_space
 
-        @yield: elements of the accumulated set of objects.
+        @return: generator of memobjs
         '''
         elems = {}
         addr_space = volatility.utils.load_as(self.vol.config)
@@ -124,28 +128,28 @@ class MemObjectSet(object):
 
     def get_alloc(self, addr_space):
         '''
-        Returns allocated memobjs from a memory dump.
+        @return: allocated memobjs from a memory dump.
         '''
         return []
 
 
     def get_scan(self):
         '''
-        Returns unallocated memobjs from a memory dump.
+        @return: unallocated memobjs from a memory dump.
         '''
         return []
 
 
     def get_diff_fields(self):
         '''
-        Return the default set of memobj fields to use in a diff operation.
+        @return: the default set of memobj fields to use in a diff operation.
         '''
         return self.get_child().fields.keys()
 
 
     def get_unique_id(self, elem):
         '''
-        Return the default set of memobj fields to use to determine the
+        @return: the default set of memobj fields to use to determine the
         the object's uniqueness.        
         '''
         return (elem.fields[x] for x in elem.fields.keys())
@@ -153,7 +157,9 @@ class MemObjectSet(object):
 
     def sort_elems(self, elems):
         '''
-        Sort memobjs in some reasonable order for display.
+        @elems: a list of memobjects
+
+        @return: sorted list of memobjs
         '''
         elems.sort(key=lambda x: x.fields[x.fields.keys()[0]].lower())
         return elems
@@ -163,10 +169,11 @@ class MemObject(object):
     '''
     The superclass for all objects parsed from memory captures.
     '''
-
     def __init__(self, offset):
         '''
-        All memobj attributes are stired in the fileds dictionary.
+        All memobj attributes are stored in the fields dictionary
+
+        @offset: the offset in the memory image of this object
         '''
         # Using ordereddict gets us free logical ordering when printing results
         self.fields = OrderedDict()
@@ -175,15 +182,19 @@ class MemObject(object):
     
 
     def get_field_keys(self):
-        # since using ordereddict, prettier ordering based on the programmatic order that fields are entered
+        '''
+        Since using ordereddict, prettier ordering based on the programmatic 
+        order that fields are entered
+
+        @return: an ordered list of fields keys for the memobj
+        '''
         return self.fields.keys()
+
 
     def __str__(self):
         '''
-        Basic default printing of all fields of a memobject.
+        @return: string of all fields of a memobj
         '''
         return "".join(["%s: %s\t" % (elem, self.fields[elem]) for elem in self.fields.keys()])
-
-
 
 

@@ -30,11 +30,14 @@ import sys
 
 class VolSetup:
     '''
-    This class manages data that the underlying volatility system requires.
+    This class manages data that the underlying Volatility system requires.
     '''
-
     def __init__(self, profile, kdbg, memimg):
-
+        '''
+        @profile: a Volatality profile string
+        @kdbg: a kdbg address string
+        @memimg: a memory image file name
+        '''
         # volatility black magic
         registry.PluginImporter()
         self.config = conf.ConfObject()
@@ -76,15 +79,19 @@ class VolSetup:
             
     def guess_profile(self, memimg):
         '''
-        Using one of the user-specified memory image files, tries to guess a
-        working volatility profile. This can easily take on the order of
+        Using one of the user-specified memory image files, try to guess a
+        working Volatility profile. This can easily take on the order of
         minutes.
+
+        @memimg: a memory image file name
+
+        @return: the guessed Volatiltiy profile string
         '''
         sys.stderr.write("Auto configuring profile. This may take a some time.\n")
 
         self.set_memimg(memimg)
         
-        # Must use a dummy profile or volatility dies
+        # Must set a dummy profile or volatility dies
         self.set_profile('WinXPSP2x86')
 
         chosen = None
@@ -100,8 +107,11 @@ class VolSetup:
         
 
     def vol_profiles(self):
+        '''
+        Load available Volatility profiles
 
-        # Load available volatility profiles
+        @return: the list of loaded Volatility profiles
+        '''
         prof = obj.Profile
         registry.PluginImporter()
         profList = sorted([i.__name__.split('.')[-1] for i in prof.__subclasses__()])
@@ -110,7 +120,7 @@ class VolSetup:
         
     def vol_profiles_list(self):
         '''
-        Returns info available volatility profiles.
+        @return: string info on available Volatility profiles
         '''
         profList = self.vol_profiles()
 
@@ -122,7 +132,11 @@ class VolSetup:
     
     
     def set_memimg(self, fname):
-    
+        '''
+        Set the memory image for this Volsetup instance
+        
+        @fname: memory image file name
+        '''
         if os.path.isfile(fname):
             self.config.update('location', "file:///%s" % os.path.abspath(fname))
         else:
@@ -130,7 +144,11 @@ class VolSetup:
         
         
     def set_profile(self, profile):
-        
+        '''
+        Set the Volatility profile for this Volsetup instance
+
+        @profile: the Volatility profile to set
+        '''                
         if profile in self.vol_profiles_list():
             self.config.update('profile', profile)
         else:
@@ -138,6 +156,11 @@ class VolSetup:
     
     
     def set_kdbg(self, kdbg):
+        '''
+        Set the kdbg address for this Volsetup instance
+
+        @kdbg: the string kdbg address to set
+        '''                
         self.config.update('kdbg', None if kdbg is None else int(kdbg, 16))
         
  
