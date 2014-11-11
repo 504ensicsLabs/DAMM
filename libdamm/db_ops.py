@@ -173,7 +173,7 @@ class DBOps:
         conn = sqlite3.connect(db)
         self.create_table(conn, setobj)
 
-        for elem in setobj.analyze_file(memimg):  # run plugin on file
+        for elem in setobj.analyze_file():  # run plugin on file ##memimg
             self.__insert_into_table(conn, elem, setobj)
             debug("Inserted %s into %s" % (str(elem), str(conn)))
 
