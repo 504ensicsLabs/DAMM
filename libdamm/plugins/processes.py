@@ -86,7 +86,7 @@ class ProcessSet(memobj.MemObjectSet):
 
 
     def sort_elems(self, elems):
-        elems.sort(key=lambda x: int(x.fields['pid']))
+        elems.sort(key=lambda x: int(x.fields['pid'] if x.fields['pid'] != '' else 0))
         return elems
 
 
