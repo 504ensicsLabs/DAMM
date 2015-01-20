@@ -56,7 +56,7 @@ class MutantSet(memobj.MemObjectSet):
         from volatility.plugins.filescan import MutantScan as MutantScan
         
         for mutant in MutantScan(self.vol.config).calculate():
-            yield Mutant(mutant, hex(mutant.obj_offset))
+            yield Mutant(mutant, str(hex(mutant.obj_offset)).rstrip('L'))
 
 
     def get_child(self):

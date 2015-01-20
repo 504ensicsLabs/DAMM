@@ -57,7 +57,7 @@ class TimerSet(memobj.MemObjectSet):
         import volatility.plugins.malware.timers as timers
         
         for timer, module in timers.Timers(self.vol.config).calculate():
-            t = Timer(timer, module, str(hex(timer.obj_offset)))
+            t = Timer(timer, module, str(hex(timer.obj_offset)).rstrip('L'))
             #print t
             yield t    
             
