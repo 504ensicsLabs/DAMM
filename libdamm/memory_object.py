@@ -152,7 +152,7 @@ class MemObjectSet(object):
         @return: the default set of memobj fields to use to determine the
         the object's uniqueness.        
         '''
-        return (elem.fields[x] for x in elem.fields.keys())
+        return tuple(elem.fields[x] for x in elem.fields.keys())
 
 
     def sort_elems(self, elems):
