@@ -1,7 +1,7 @@
 # DAMM
 An open source memory analysis tool built on top of Volatility. It is meant as a proving ground for interesting new techniques to be made available to the community. These techniques are an attempt to speed up the investigation process through data reduction and codifying some expert knowledge.
 
-##Table of Contents
+## Table of Contents
  * [Features](#features)
  * [Usage](#usage)
    * [Supported plugins](#plugins)
@@ -24,7 +24,7 @@ An open source memory analysis tool built on top of Volatility. It is meant as a
 ## Usage <a name="usage"/>
 ```
 NOTE: Most DAMM output looks better piped through 'less -S' (upper 'S') as in: 
-#python damm.py <some DAMM functionality> | less -S (for default output format)
+# python damm.py <some DAMM functionality> | less -S (for default output format)
 ```
 ```
 python damm.py -h
